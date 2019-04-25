@@ -8,8 +8,8 @@ float dot_x[1000];
 float dot_y[1000];
 const float K1=2;      //构造折线
 const int b1=1;
-const float K2=-1/2;
-const int b2=51;
+const float K2=-1;
+const int b2=136;
 
 void min_cube_init(struct cube *);
 void cube_init ( struct cube * cube);
@@ -22,6 +22,7 @@ void fpWriteCoord(double x, int height);//Writes the intersection of the curve a
 int fpReadCoord( );//Reads the intersection of the curves in the file with the grid
 void cube_search(struct cube *, float * , int, int, struct dot_in_cube *);
 struct cube * search(struct cube * head, int row, int column);
+double circleIntersectionPoint(int X0,int Y0,int r);
 
 int main(void) {
     struct cube head;
@@ -30,9 +31,10 @@ int main(void) {
    // float dot_y[] = {4.5, 9.5, 14.5, 19.5, 24.5, 29.5, 34.5, 39.5, 44.5, 49.5};
     int len = 10;
     min_cube_init(&head);
+    circleIntersectionPoint(70,60,1);
    fpWriteCoord(0, 10);
-   // fpReadCoord( );
-   // result_out( &head );
+    fpReadCoord( );
+    result_out( &head );
     // flag = 1  x, flag  =2 y.
     cube_search( &head, dot_x, len, 1,  &result);
     cube_search( &head, dot_y, len, 2,  &result);
@@ -169,8 +171,10 @@ void result_out ( struct cube *m ) {
     struct cube * row = m->right->top;
     int i;
     FILE *fp;
-    fp=fopen("All vertex coordinates.txt","w");//打开文件 
-	if ((fp=fopen("All vertex coordinates.txt","w"))==NULL) //判断文件是否能打开
+   // fp=fopen("All vertex coordinates.txt","w");//打开文件 
+	//if ((fp=fopen("All vertex coordinates.txt","w"))==NULL) //判断文件是否能打开
+     fp=fopen("All vertex coordinates1.txt","w");//打开文件 
+	if ((fp=fopen("All vertex coordinates1.txt","w"))==NULL) //判断文件是否能打开
 	{    
 		printf("fail to open the file!\n"); 
 		exit(0); 
@@ -181,11 +185,12 @@ void result_out ( struct cube *m ) {
         if(!(h->column % min_side)) {
            // printf("\n\nid = %d\t floot = %d\t row = %d\t column = %d\t height = %d\n", h -> id, h -> floor, h -> row, h -> column, h -> height);
            printf("\tid = %d \n", h -> id);
-            fprintf(fp,"%d", h -> id);
+            //fprintf(fp,"%d", h -> id);
             for (i = 0; i < dotleng; i++) {
                // printf("dot->id = %d\t (x, y, z) =  (%d, %d, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
                 printf("dot->id = %d\t  (%d, %d, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
-                 fprintf(fp,"\t(%d, %d, %d)\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
+                 //fprintf(fp,"\t(%d, %d, %d)\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
+                 fprintf(fp,"%d, %d, %d\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
             }
             if(!row){
                 return;
@@ -196,11 +201,12 @@ void result_out ( struct cube *m ) {
         }
        // printf("\n\nid = %d\t floot = %d\t row = %d\t column = %d\t height = %d\n", h -> id, h -> floor, h -> row, h -> column, h -> height);
         printf("\tid = %d \n", h -> id);
-         fprintf(fp,"%d", h -> id);
+        // fprintf(fp,"%d", h -> id);
         for (i = 0; i < dotleng; i++) {
            // printf("dot->id = %d\t (x, y, z) =  (%d, %d, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
              printf("dot->id = %d\t  (%d, %d, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
-             fprintf(fp,"\t(%d, %d, %d)\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
+            // fprintf(fp,"\t(%d, %d, %d)\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
+             fprintf(fp,"%d, %d, %d\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
         }
         h = h->right;
     }
@@ -460,7 +466,81 @@ int fpReadCoord()
     return 1;
 }
 
-double intersectionPoint(int X0,int Y0,int r){
+int circleIntersectionPoint(int X0,int Y0,int r){
+    double x,y;
+    double d;
+    double tem[2];
+    if (X0 <= 45)
+    {
+
+        d = (2 * X0 - Y0 + 1) / sqrt(5);
+        //printf("d=%lf\n",d);
+        if (d <= r && d>=0)
+        {
+            //printf("i=%lf \n",i);
+            x = (X0 + 2*Y0 - 2 + sqrt(5 * r * r - 4 * X0 * X0 - Y0 * Y0 + 4 * X0 * Y0 - 4 * X0 + 2 * Y0 - 1)) / 5;
+            y = 2 * x + 1;
+            tem[0] = x;
+            tem[1] = y;
+            printf("\t x= %lf ,y= %lf\n", x, y);
+        }
+        else 
+        {
+            printf("NO IntersectionPoint\n");
+        }
+    }
+    if(X0>45 && X0<=100){
+        d=(X0+Y0-136)/sqrt(2);
+        //printf("d=%lf\n",d);
+        if (d <= r && d>=0)
+        {
+            x = (X0 + 136 - Y0 + sqrt(-X0 * X0 - Y0 * Y0 - 2 * X0 * Y0 + 2 * r * r +272 * Y0 +272 *X0- 136 * 136)) / 2;
+            y = -x + 136;
+            tem[0] = x;
+            tem[1] = y;
+            printf("\t x= %lf ,y= %lf\n", x, y);
+        }
+        else
+        {
+            printf("NO IntersectionPoint\n");
+        }
+        
+    }
     return 1;
+
+}
+
+int leftOvalIntersectionPoint(int X0,int Y0,int Z0){
+       // 3x*x/(4h*h)+y*y(4*h*h-3*X0*X0)/(4*h*h*(Y0-sqrt(3)h)*(Y0-sqrt(3)h))=1;
+    double x,y;//交点坐标
+    double tem[2];
+    if (X0 <= 45)
+    {
+            x = ;
+            y = 2 * x + 1;
+            tem[0] = x;
+            tem[1] = y;
+            printf("\t x= %lf ,y= %lf\n", x, y);
+        }
+        else 
+        {
+            printf("NO IntersectionPoint\n");
+        }
+    }
+    if(X0>45 && X0<=100){
+            x = (X0 + 136 - Y0 + sqrt(-X0 * X0 - Y0 * Y0 - 2 * X0 * Y0 + 2 * r * r +272 * Y0 +272 *X0- 136 * 136)) / 2;
+            y = -x + 136;
+            tem[0] = x;
+            tem[1] = y;
+            printf("\t x= %lf ,y= %lf\n", x, y);
+        }
+        else
+        {
+            printf("NO IntersectionPoint\n");
+        }
+        
+    }
+    return 1;
+
 
 }
