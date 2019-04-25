@@ -22,7 +22,8 @@ void fpWriteCoord(double x, int height);//Writes the intersection of the curve a
 int fpReadCoord( );//Reads the intersection of the curves in the file with the grid
 void cube_search(struct cube *, float * , int, int, struct dot_in_cube *);
 struct cube * search(struct cube * head, int row, int column);
-double circleIntersectionPoint(int X0,int Y0,int r);
+int circleIntersectionPoint(int X0,int Y0,int r);
+int leftOvalIntersectionPoint(int X0,int Y0,int Z0);
 
 int main(void) {
     struct cube head;
@@ -30,14 +31,15 @@ int main(void) {
    // float dot_x[] = {21, 41, 61, 81, 101, 121, 141, 161, 181, 201};
    // float dot_y[] = {4.5, 9.5, 14.5, 19.5, 24.5, 29.5, 34.5, 39.5, 44.5, 49.5};
     int len = 10;
-    min_cube_init(&head);
-    circleIntersectionPoint(70,60,1);
-   fpWriteCoord(0, 10);
-    fpReadCoord( );
-    result_out( &head );
+    // min_cube_init(&head);
+    // circleIntersectionPoint(70,60,1);
+    // fpWriteCoord(0, 10);
+    // fpReadCoord( );
+    // result_out( &head );
     // flag = 1  x, flag  =2 y.
-    cube_search( &head, dot_x, len, 1,  &result);
-    cube_search( &head, dot_y, len, 2,  &result);
+    // cube_search( &head, dot_x, len, 1,  &result);
+    // cube_search( &head, dot_y, len, 2,  &result);
+    leftOvalIntersectionPoint(60,70,5);
     return 0;
 }
 
@@ -510,37 +512,38 @@ int circleIntersectionPoint(int X0,int Y0,int r){
 
 }
 
-int leftOvalIntersectionPoint(int X0,int Y0,int Z0){
-       // 3x*x/(4h*h)+y*y(4*h*h-3*X0*X0)/(4*h*h*(Y0-sqrt(3)h)*(Y0-sqrt(3)h))=1;
-    double x,y;//交点坐标
-    double tem[2];
-    if (X0 <= 45)
+int leftOvalIntersectionPoint(int X0, int Y0, int Z0)
+{
+    float i = 0.0;
+    double y1, y2, y3, y4, y5;
+     y1 = K1 * i + 1;
+           y3 = 4 * Z0 * Z0 - 3 * i * i;
+            y4 = (Y0 - sqrt(3) * Z0) * (Y0 - sqrt(3) * Z0);
+            y5 = 4 * Z0 * Z0 - 3 * X0 * X0;
+            //y2=sqrt (((4*Z0*Z0-3*i*i)*(Y0-sqrt(3)*Z0)*(Y0-sqrt(3)*Z0))/(4*Z0*Z0-3*X0*X0));
+            y2 = sqrt(y3 * y4 / y5);
+    for (; i <= 45.0; i += 1)
     {
-            x = ;
-            y = 2 * x + 1;
-            tem[0] = x;
-            tem[1] = y;
-            printf("\t x= %lf ,y= %lf\n", x, y);
-        }
-        else 
+        if(y2>0 && y3>0)
         {
-            printf("NO IntersectionPoint\n");
-        }
-    }
-    if(X0>45 && X0<=100){
-            x = (X0 + 136 - Y0 + sqrt(-X0 * X0 - Y0 * Y0 - 2 * X0 * Y0 + 2 * r * r +272 * Y0 +272 *X0- 136 * 136)) / 2;
-            y = -x + 136;
-            tem[0] = x;
-            tem[1] = y;
-            printf("\t x= %lf ,y= %lf\n", x, y);
-        }
-        else
-        {
-            printf("NO IntersectionPoint\n");
+            /* code */
+        
+             y1 = K1 * i + 1;
+           y3 = 4 * Z0 * Z0 - 3 * i * i;
+            y4 = (Y0 - sqrt(3) * Z0) * (Y0 - sqrt(3) * Z0);
+            y5 = 4 * Z0 * Z0 - 3 * X0 * X0;
+            //y2=sqrt (((4*Z0*Z0-3*i*i)*(Y0-sqrt(3)*Z0)*(Y0-sqrt(3)*Z0))/(4*Z0*Z0-3*X0*X0));
+            y2 = sqrt((y3 * y4) / y5);
+                printf("i=%f\n",  i);
+            printf("y2=%f,y3=%f,y4=%f,y5=%f\n",  y2, y3, y4, y5);
+            if (fabs(y1 - y2) <= 1e-8)
+            {
+                printf("x=%f\n", i);
+                printf("y1=%f,y2=%f\n", y1, y2);
+            }
         }
         
+        // if(fabs((K1*i+1)-sqrt((4*Z0*Z0-3*i*i)*(Y0-sqrt(3)*Z0)*(Y0-sqrt(3)*Z0)/(4*Z0*Z0-3*X0*X0)))<=1e-8){
     }
     return 1;
-
-
 }
