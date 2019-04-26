@@ -6,10 +6,10 @@ const double pi = 3.1415926;
 const int dotleng = 8;
 float dot_x[1000];
 float dot_y[1000];
-const float K1=2;      //构造折线
-const int b1=1;
-const float K2=-1;
-const int b2=136;
+const int K1=2;      //构造折线
+const int B1=1;
+const int K2=-1;
+const int B2=136;
 
 void min_cube_init(struct cube *);
 void cube_init ( struct cube * cube);
@@ -23,11 +23,11 @@ int fpReadCoord( );//Reads the intersection of the curves in the file with the g
 void cube_search(struct cube *, float * , int, int, struct dot_in_cube *);
 struct cube * search(struct cube * head, int row, int column);
 int circleIntersectionPoint(int X0,int Y0,int r);
-int leftOvalIntersectionPoint(int X0,int Y0,int Z0);
+int OvalANDLineIntersectionPoint(int X0, int Y0, int h);
 
 int main(void) {
-    struct cube head;
-    struct dot_in_cube result;
+    //struct cube head;
+    //struct dot_in_cube result;
    // float dot_x[] = {21, 41, 61, 81, 101, 121, 141, 161, 181, 201};
    // float dot_y[] = {4.5, 9.5, 14.5, 19.5, 24.5, 29.5, 34.5, 39.5, 44.5, 49.5};
     int len = 10;
@@ -39,7 +39,7 @@ int main(void) {
     // flag = 1  x, flag  =2 y.
     // cube_search( &head, dot_x, len, 1,  &result);
     // cube_search( &head, dot_y, len, 2,  &result);
-    leftOvalIntersectionPoint(60,70,5);
+    OvalANDLineIntersectionPoint(10,20,3);
     return 0;
 }
 
@@ -512,38 +512,38 @@ int circleIntersectionPoint(int X0,int Y0,int r){
 
 }
 
-int leftOvalIntersectionPoint(int X0, int Y0, int Z0)
+int OvalANDLineIntersectionPoint(int X0, int Y0, int h)//Coordinates of the intersection of an ellipse and a line
 {
     float i = 0.0;
-    double y1, y2, y3, y4, y5;
-     y1 = K1 * i + 1;
-           y3 = 4 * Z0 * Z0 - 3 * i * i;
-            y4 = (Y0 - sqrt(3) * Z0) * (Y0 - sqrt(3) * Z0);
-            y5 = 4 * Z0 * Z0 - 3 * X0 * X0;
-            //y2=sqrt (((4*Z0*Z0-3*i*i)*(Y0-sqrt(3)*Z0)*(Y0-sqrt(3)*Z0))/(4*Z0*Z0-3*X0*X0));
-            y2 = sqrt(y3 * y4 / y5);
-    for (; i <= 45.0; i += 1)
+    double y1, y2, temp;
+    int flag=0;//if or not has a IntersectionPoint
+   // y1 = K1 * i + 1;//line
+    temp = (i - X0 + (h / sqrt(3))) * (i - X0 + (h / sqrt(3)));
+   // y2 = sqrt((4 * h * h - 3 * temp) / 12) + Y0;//oval
+    for (; i <= 45.0; i += 0.001)
     {
-        if(y2>0 && y3>0)
+        if ( temp > 0 )
         {
             /* code */
-        
-             y1 = K1 * i + 1;
-           y3 = 4 * Z0 * Z0 - 3 * i * i;
-            y4 = (Y0 - sqrt(3) * Z0) * (Y0 - sqrt(3) * Z0);
-            y5 = 4 * Z0 * Z0 - 3 * X0 * X0;
-            //y2=sqrt (((4*Z0*Z0-3*i*i)*(Y0-sqrt(3)*Z0)*(Y0-sqrt(3)*Z0))/(4*Z0*Z0-3*X0*X0));
-            y2 = sqrt((y3 * y4) / y5);
-                printf("i=%f\n",  i);
-            printf("y2=%f,y3=%f,y4=%f,y5=%f\n",  y2, y3, y4, y5);
-            if (fabs(y1 - y2) <= 1e-8)
+
+            y1 = K1 * i + 1;
+            //temp = (i - X0 + (h / sqrt(3))) * (i - X0 + (h / sqrt(3)));
+            y2 = sqrt((4 * h * h - 3 * temp) / 12) + Y0;
+            // printf("i=%f\n", i);
+            // printf("y2=%lf\n", y2);
+            // printf("y1=%lf,y2=%lf,temp=%lf\n", y1, y2,temp);
+            if (y2 > 0 && (fabs(y1 - y2) <= 0.1 ))
             {
                 printf("x=%f\n", i);
-                printf("y1=%f,y2=%f\n", y1, y2);
+                printf("y1=%lf,y2=%lf\n", y1, y2);
+                flag=1;
             }
-        }
-        
+       }
+
         // if(fabs((K1*i+1)-sqrt((4*Z0*Z0-3*i*i)*(Y0-sqrt(3)*Z0)*(Y0-sqrt(3)*Z0)/(4*Z0*Z0-3*X0*X0)))<=1e-8){
+    }
+    if(flag==0){
+        printf("NO IntersectionPoint! \n");
     }
     return 1;
 }
