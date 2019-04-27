@@ -6,10 +6,11 @@
 #include <time.h>
 #include <assert.h>
 // #include <conio.h>    //window lib
+const int CMAX = 100;
 
 typedef struct point_type {
     /* data */
-    int x, y, z;
+    float x, y, z;
     int id;
 }point, *pos;
 
@@ -44,6 +45,25 @@ typedef struct dot_in_cube {
     struct cube *right;
 }dots, *dot;
 
+typedef struct camera {
+    float x, y;
+    int id;
+    int select [3];
+    int point [3][4];
+    struct camera * next;
+}ca;
+
+typedef struct camerainfo {
+    struct camera ca;
+    int pos[3];
+}ci;
+
+typedef struct point {
+    float x;
+    float y;
+    int total;
+    struct camerainfo cinfo[100];
+}poi;
 
 
 #endif

@@ -1,15 +1,18 @@
 #include "head.h"
 
 const int max_side = 100;
-const int min_side = 10;
+const float min_side = 0.5;
 const double pi = 3.1415926;
 const int dotleng = 8;
 float dot_x[1000];
 float dot_y[1000];
-const int K1=2;      //构造折线
-const int B1=1;
-const int K2=-1;
-const int B2=136;
+const int K = 2;      //构造折线
+const int B1 = 1;
+const int K2 = -1;
+const int B2 = 136;
+
+struct point pitem[100];
+int p_total = 0;
 
 void min_cube_init(struct cube *);
 void cube_init ( struct cube * cube);
@@ -21,17 +24,31 @@ void curve_y (double * res, int step);
 void fpWriteCoord(double x, int height);//Writes the intersection of the curve and the grid to a file
 int fpReadCoord( );//Reads the intersection of the curves in the file with the grid
 void cube_search(struct cube *, float * , int, int, struct dot_in_cube *);
-struct cube * search(struct cube * head, int row, int column);
-int circleANDLineIntersectionPoint(int X0,int Y0,int r,int k,int b);
-int LeftOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b);
-int RigthOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b);
+void camera_link(struct camera *c, float x, float y, int id);
 
+void search_point_in_camera(struct point *, struct camera *);
+void init_camera(struct camera *);
+void camera_link(struct camera *c, float x, float y, int id);
+
+struct cube *search(struct cube *head, int row, int column);
+int circleANDLineIntersectionPoint(float X0, float Y0, int h, int f, struct camera *c);
+int LeftOvalANDLineIntersectionPoint(float X0, float Y0, int h, int f, struct camera *c);
+int RigthOvalANDLineIntersectionPoint(float X0, float Y0, int h, int f, struct camera *c);
 
 int main(void) {
     //struct cube head;
     //struct dot_in_cube result;
    // float dot_x[] = {21, 41, 61, 81, 101, 121, 141, 161, 181, 201};
    // float dot_y[] = {4.5, 9.5, 14.5, 19.5, 24.5, 29.5, 34.5, 39.5, 44.5, 49.5};
+   struct point phead;
+   struct camera chead;
+   struct camera *p;
+   float x[] = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+   float y[] = {0, 20, 40, 60, 80, 80, 70, 60, 50, 40, 40};
+//    float x = 0.0;
+//    float y = 0.0;
+   int i;
+   int id = 1;
     int len = 10;
     // min_cube_init(&head);
     // circleIntersectionPoint(70,60,1);
@@ -43,7 +60,17 @@ int main(void) {
     // cube_search( &head, dot_y, len, 2,  &result);
     //circleANDLineIntersectionPoint(20,40,5,2,1);
     //LeftOvalANDLineIntersectionPoint( 20, 50, 3, 2,  1);
-    RigthOvalANDLineIntersectionPoint( 20, 50, 3, 2,  1);
+    chead.next = NULL;
+    chead.id = 0;
+    for (i = 0; i < 11; i++) {
+    camera_link(&chead, x[i], y[i], i + 1);
+    }
+    p = &chead;
+    while(p->next) {
+        // printf('%d\t', p->next->x);
+        p = p->next;
+    }
+    search_point_in_camera(&phead, &chead);
     return 0;
 }
 
@@ -148,7 +175,7 @@ void cube_link( struct cube * h, struct cube * p ) {
     int dot = 0;
     while ( tmpright->right ) {
         tmpright = tmpright->right;
-        if(0 == (tmpright->column % min_side)) {
+        if(0 == (tmpright->column % (int) min_side)) {
             if(tmptop->top) {
                 tmpright = tmptop->top;
                 tmptop = tmptop->top;
@@ -188,7 +215,7 @@ void result_out ( struct cube *m ) {
 
     while (h) {
         //printf("column: %d", h->column);
-        if(!(h->column % min_side)) {
+        if(!(h->column % (int) min_side)) {
            // printf("\n\nid = %d\t floot = %d\t row = %d\t column = %d\t height = %d\n", h -> id, h -> floor, h -> row, h -> column, h -> height);
            printf("\tid = %d \n", h -> id);
             //fprintf(fp,"%d", h -> id);
@@ -210,7 +237,7 @@ void result_out ( struct cube *m ) {
         // fprintf(fp,"%d", h -> id);
         for (i = 0; i < dotleng; i++) {
            // printf("dot->id = %d\t (x, y, z) =  (%d, %d, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
-             printf("dot->id = %d\t  (%d, %d, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
+             printf("dot->id = %d\t  (%f, %f, %d)\n", h->dot[i].id, h->dot[i].x, h->dot[i].y, h->dot[i].z);
             // fprintf(fp,"\t(%d, %d, %d)\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
              fprintf(fp,"%d, %d, %d\n", h->dot[i].x, h->dot[i].y, h->dot[i].z);
         }
@@ -414,8 +441,9 @@ void fpWriteCoord(double x, int height){
                 //  y = 10*sin(x*3.14/180);
                 y =-x+136;
                 //if ((y == j || y == i|| x == i|| x == j )&& x!=0)
-                if (x == i || x == j && x != 0 && x <= 91 && y <= 100)  {
-                     printf("The intersection point is :x= %lf ,y= %lf\n", y, x);
+                if ((x == i || x == j) && (x != 0 && x <= 91 && y <= 100))
+                {
+                    printf("The intersection point is :x= %lf ,y= %lf\n", y, x);
                     // dot_x[j]=y;
                     //fprintf(fp,"%lf %lf\n",x, y);
                     fprintf(fp2, "%lf %lf\n", y,x);
@@ -472,11 +500,20 @@ int fpReadCoord()
     return 1;
 }
 
-int circleANDLineIntersectionPoint(int X0, int Y0, int r, int k, int b)
+int circleANDLineIntersectionPoint(float X0, float Y0, int h, int f, struct camera *c)
 {
     double x1, y1, x2, y2;
+    int r = 5;
     double tem[4];
+    int k, b;
     int flag=0;//if or not has a IntersectionPoint
+    if(f) {
+        k = -1;
+        b = 136;
+    } else {
+        k = 2;
+        b = 1;
+    }
     if (X0 <= 100)
     {
 
@@ -488,8 +525,31 @@ int circleANDLineIntersectionPoint(int X0, int Y0, int r, int k, int b)
             tem[1] = y1;
             tem[2] = x2;
             tem[3] = y2;
-            printf("x1=%lf,y1=%lf,x2=%lf,y2=%lf\n",x1,y1,x2,y2);
+            if(x1 >=0 && x1 <= 100) {
             flag=1;
+            printf("x1=%lf,y1=%lf,x2=%lf,y2=%lf\n",x1,y1,x2,y2);
+
+            c->select[1] = 1;
+            c->point[1][0] = x1;
+            c->point[1][1] = y1;
+            c->point[1][2] = x2;
+            c->point[1][3] = y2;
+
+            pitem[p_total].x = x1;
+            pitem[p_total].y = y1;
+            pitem[p_total].total = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].pos[0] = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].ca = *c;
+            p_total += 1;
+
+            pitem[p_total].x = x2;
+            pitem[p_total].y = y2;
+            pitem[p_total].total = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].pos[0] = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].ca = *c;
+            p_total += 1;
+
+            }
     }
     if(flag==0){
         printf("NO IntersectionPoint\n");
@@ -498,24 +558,55 @@ int circleANDLineIntersectionPoint(int X0, int Y0, int r, int k, int b)
     return 1;
 }
 
-int LeftOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coordinates of the intersection of an ellipse and a line
+int LeftOvalANDLineIntersectionPoint(float X0, float Y0, int h, int f, struct camera *c) //Coordinates of the intersection of an ellipse and a line
 {
-    double x1, y1, x2, y2;
-    double tem[4];
+    float x1, y1, x2, y2;
+    float tem[4];
+    int k, b;
     int flag=0;//if or not has a IntersectionPoint
+    if(f) {
+        k = -1;
+        b = 136;
+    } else {
+        k = 2;
+        b = 1;
+    }
     if (X0 <= 100)
     {
-
             x1 = (6*X0 + 24*k*Y0 - 2*sqrt(3)*h -24*k*b+ sqrt((2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )*(2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )- 4 * (12*k * k+3)*( 3*X0 * X0 +12* Y0 * Y0+12*b*b -24*b*Y0- 2*sqrt(3)*X0-3*h*h))) /(24*k*k+6);
             y1 = k * x1 + b;
             x2=(6*X0 + 24*k*Y0 - 2*sqrt(3)*h -24*k*b- sqrt((2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )*(2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )- 4 * (12*k * k+3)*( 3*X0 * X0 +12* Y0 * Y0+12*b*b -24*b*Y0- 2*sqrt(3)*X0-3*h*h))) /(24*k*k+6);
             y2= k * x2 + b;
+            
+            
+
             tem[0] = x1;
             tem[1] = y1;
             tem[2] = x2;
             tem[3] = y2;
 			if(x1<=100 && x1>=0){
-				printf("x1=%lf,y1=%lf,x2=%lf,y2=%lf\n",x1,y1,x2,y2);
+				printf("x0 =%f, y0 = %f\t x1=%lf,y1=%lf,x2=%lf,y2=%lf\n",X0, Y0,x1,y1,x2,y2);
+                c->select[0] = 1;
+            c->point[0][0] = x1;
+            c->point[0][1] = y1;
+            c->point[0][2] = x2;
+            c->point[0][3] = y2;
+
+            pitem[p_total].x = x1;
+            pitem[p_total].y = y1;
+            pitem[p_total].total = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].pos[0] = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].ca = *c;
+            p_total += 1;
+
+            pitem[p_total].x = x2;
+            pitem[p_total].y = y2;
+            pitem[p_total].total = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].pos[0] = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].ca = *c;
+            p_total += 1;
+
+
             flag=1;
 			}
             
@@ -527,16 +618,24 @@ int LeftOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coord
 }
 
 
-int RigthOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coordinates of the intersection of an ellipse and a line
+int RigthOvalANDLineIntersectionPoint(float X0, float Y0, int h, int f, struct camera *c)//Coordinates of the intersection of an ellipse and a line
 {
     double x1, y1, x2, y2;
     double tem[4];
+    int k, b;
     int flag=0;//if or not has a IntersectionPoint
+    if(f) {
+        k = -1;
+        b = 136;
+    } else {
+        k = 2;
+        b = 1;
+    }
     if (X0 <= 100)
     {
 
             x1 = (6*X0 + 24*k*Y0 + 2*sqrt(3)*h -24*k*b+ sqrt((-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )*(-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )- 4 * (12*k * k+3)*( 3*X0 * X0 +12* Y0 * Y0+12*b*b -24*b*Y0+2*sqrt(3)*X0-3*h*h))) /(24*k*k+6);
-            y1 = k * x1 + b;
+            y1 = k * x1 + 1;
             x2=(6*X0 + 24*k*Y0 + 2*sqrt(3)*h -24*k*b- sqrt((-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )*(-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )- 4 * (12*k * k+3)*( 3*X0 * X0 +12* Y0 * Y0+12*b*b -24*b*Y0+2*sqrt(3)*X0-3*h*h))) /(24*k*k+6);
             y2= k * x2 + b;
             tem[0] = x1;
@@ -545,6 +644,26 @@ int RigthOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coor
             tem[3] = y2;
 			if(x1<=100 && x1>=0){
 				printf("x1=%lf,y1=%lf,x2=%lf,y2=%lf\n",x1,y1,x2,y2);
+                c->select[2] = 1;
+            c->point[2][0] = x1;
+            c->point[2][1] = y1;
+            c->point[2][2] = x2;
+            c->point[2][3] = y2;
+
+            pitem[p_total].x = x1;
+            pitem[p_total].y = y1;
+            pitem[p_total].total = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].pos[0] = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].ca = *c;
+            p_total += 1;
+
+            pitem[p_total].x = x2;
+            pitem[p_total].y = y2;
+            pitem[p_total].total = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].pos[0] = 1;
+            pitem[p_total].cinfo[pitem[p_total].total - 1].ca = *c;
+            p_total += 1;
+
             flag=1;
 			}
             
@@ -555,24 +674,89 @@ int RigthOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coor
     return 1;
 }
 
-int CameraGearSelection(int ID,int number){
-    switch (number)
-    {
-    case 1:
-        printf("left Oval\n");
-        LeftOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
+// int CameraGearSelection(int ID,int number){
+//     switch (number)
+//     {
+//     case 1:
+//         printf("left Oval\n");
+//         LeftOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
 
-        break;
-    case 2:
-        printf("circle\n");
-        circleANDLineIntersectionPoint(20, 40, 5, 2, 1);
-        break;
-    case 3:
-        printf("right Oval\n");
-        RigthOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
-        break;
-    default:
-        printf("NO IntersectionPoint! \n");
-        break;
+//         break;
+//     case 2:
+//         printf("circle\n");
+//         circleANDLineIntersectionPoint(20, 40, 5, 2, 1);
+//         break;
+//     case 3:
+//         printf("right Oval\n");
+//         RigthOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
+//         break;
+//     default:
+//         printf("NO IntersectionPoint! \n");
+//         break;
+//     }
+// }
+
+void init_camera(struct camera * c) {
+    int i, j;
+    int pos = 3;
+    int coord = 4;
+    for ( i = 0; i < pos; i++ ) {
+        for (j = 0; j < coord; j++) {
+            if( i == 0 && j < pos) {
+                c->select[i] = 0;
+            }
+            c->point[i][j] = 0;
+        }
     }
+    c->next = NULL;
+}
+
+void camera_link(struct camera  *c, float x, float y, int id ) {
+    struct camera *tmp;
+    tmp = malloc(sizeof(struct camera));
+    init_camera(tmp);
+    while(c->next) {
+        c = c->next;
+        printf("line: %d\n", c->id);
+    }
+    c->next = tmp;
+    tmp->x = x;
+    tmp->y = y;
+    tmp->id = id;
+}
+
+void search_point_in_camera(struct point * p, struct camera * e) {
+    struct camera *c = e->next;
+    int x = c->x;
+    int y = c->y;
+    int i, j;
+
+    while(c) {
+        x = c->x;
+        y = c->y;
+    LeftOvalANDLineIntersectionPoint(x, y, 5, 0, c);
+    LeftOvalANDLineIntersectionPoint(x, y, 5, 1, c);
+    RigthOvalANDLineIntersectionPoint(x, y, 5, 0, c);
+    RigthOvalANDLineIntersectionPoint(x, y, 5, 1, c);
+    circleANDLineIntersectionPoint(x, y, 5, 0, c);
+    circleANDLineIntersectionPoint(x, y, 5, 1, c);
+    c = c->next;
+    }
+
+
+
+
+    for( i = 0; i < p_total; i++) {
+        // for(j = 0; j < 3; j++) {
+        //     if(pitem[i].cinfo[pitem[i].total - 1].ca.selecg[j])
+        //     printf("select = %d\t", j);
+        // }
+        printf("%f ,%fx = %f, y = %f, \t camera.x = %f camera.y = %f\n", x, y, pitem[i].x, pitem[i].y, pitem[i].cinfo[pitem[i].total - 1].ca.x, pitem[i].cinfo[pitem[i].total - 1].ca.y);
+    }
+    
+
+    // circleANDLineIntersectionPoint(20,40,5,2,1);
+
+
+    // RigthOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
 }
