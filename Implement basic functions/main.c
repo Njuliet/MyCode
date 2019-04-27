@@ -23,7 +23,9 @@ int fpReadCoord( );//Reads the intersection of the curves in the file with the g
 void cube_search(struct cube *, float * , int, int, struct dot_in_cube *);
 struct cube * search(struct cube * head, int row, int column);
 int circleANDLineIntersectionPoint(int X0,int Y0,int r,int k,int b);
-int OvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b);
+int LeftOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b);
+int RigthOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b);
+
 
 int main(void) {
     //struct cube head;
@@ -40,7 +42,8 @@ int main(void) {
     // cube_search( &head, dot_x, len, 1,  &result);
     // cube_search( &head, dot_y, len, 2,  &result);
     //circleANDLineIntersectionPoint(20,40,5,2,1);
-    OvalANDLineIntersectionPoint( 20, 50, 3, 2,  1);
+    //LeftOvalANDLineIntersectionPoint( 20, 50, 3, 2,  1);
+    RigthOvalANDLineIntersectionPoint( 20, 50, 3, 2,  1);
     return 0;
 }
 
@@ -495,7 +498,7 @@ int circleANDLineIntersectionPoint(int X0, int Y0, int r, int k, int b)
     return 1;
 }
 
-int OvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coordinates of the intersection of an ellipse and a line
+int LeftOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coordinates of the intersection of an ellipse and a line
 {
     double x1, y1, x2, y2;
     double tem[4];
@@ -521,4 +524,55 @@ int OvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coordinat
         printf("NO IntersectionPoint! \n");
     }
     return 1;
+}
+
+
+int RigthOvalANDLineIntersectionPoint(int X0, int Y0, int h, int k, int b)//Coordinates of the intersection of an ellipse and a line
+{
+    double x1, y1, x2, y2;
+    double tem[4];
+    int flag=0;//if or not has a IntersectionPoint
+    if (X0 <= 100)
+    {
+
+            x1 = (6*X0 + 24*k*Y0 + 2*sqrt(3)*h -24*k*b+ sqrt((-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )*(-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )- 4 * (12*k * k+3)*( 3*X0 * X0 +12* Y0 * Y0+12*b*b -24*b*Y0+2*sqrt(3)*X0-3*h*h))) /(24*k*k+6);
+            y1 = k * x1 + b;
+            x2=(6*X0 + 24*k*Y0 + 2*sqrt(3)*h -24*k*b- sqrt((-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )*(-2*sqrt(3) * h - 6* X0  + 24*k* b-24*k*Y0 )- 4 * (12*k * k+3)*( 3*X0 * X0 +12* Y0 * Y0+12*b*b -24*b*Y0+2*sqrt(3)*X0-3*h*h))) /(24*k*k+6);
+            y2= k * x2 + b;
+            tem[0] = x1;
+            tem[1] = y1;
+            tem[2] = x2;
+            tem[3] = y2;
+			if(x1<=100 && x1>=0){
+				printf("x1=%lf,y1=%lf,x2=%lf,y2=%lf\n",x1,y1,x2,y2);
+            flag=1;
+			}
+            
+    }
+    if(flag==0){
+        printf("NO IntersectionPoint! \n");
+    }
+    return 1;
+}
+
+int CameraGearSelection(int ID,int number){
+    switch (number)
+    {
+    case 1:
+        printf("left Oval\n");
+        LeftOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
+
+        break;
+    case 2:
+        printf("circle\n");
+        circleANDLineIntersectionPoint(20, 40, 5, 2, 1);
+        break;
+    case 3:
+        printf("right Oval\n");
+        RigthOvalANDLineIntersectionPoint(20, 50, 3, 2, 1);
+        break;
+    default:
+        printf("NO IntersectionPoint! \n");
+        break;
+    }
 }
